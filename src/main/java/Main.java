@@ -3,12 +3,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.opencsv.*;
 import com.opencsv.bean.*;
+import org.w3c.dom.*;
 
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.*;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -18,6 +19,14 @@ public class Main {
         List<Employee> list = parseCSV(columnMapping, fileName);
         String json = listToJson(list);
         writeString(json, "data.json");
+        List<Employee> list1 = null;
+        try {
+            list1 = parseXML("data.xml");
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        String json1 = listToJson(list1);
+        writeString(json1, "data2.json");
     }
 
     public static List<Employee> parseCSV (String[] columnMapping, String fileName) {
@@ -52,4 +61,34 @@ public class Main {
 
         }
     }
+
+    public static List<Employee> parseXML (String fileName) throws Exception {
+        List<Employee> staff = new ArrayList<>();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(new File(fileName));
+
+        NodeList nodeList = doc.getElementsByTagName("employee");
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node node = nodeList.item(i);
+            if (Node.ELEMENT_NODE == node.getNodeType()) {
+                Element element = (Element) node;
+                Employee employee = new Employee();
+                employee.id = Long.parseLong(getValue(element, "id"));
+                employee.firstName = getValue(element, "firstName");
+                employee.lastName = getValue(element, "lastName");
+                employee.age = Integer.parseInt(getValue(element, "age"));
+                staff.add(employee);
+                }
+            }
+        return staff;
+        }
+
+        public static String getValue (Element element, String tag) {
+            NodeList nodeList1 = element.getElementsByTagName(tag).item(0).getChildNodes();
+            Node node1 = (Node) nodeList1.item(0);
+            return node1.getNodeValue();
+        }
+
 }
+
